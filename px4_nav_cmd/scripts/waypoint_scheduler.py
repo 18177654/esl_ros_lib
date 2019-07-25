@@ -39,6 +39,7 @@ waypoints = [
             ]
 threshold = 0.3 # How small the position error and velocity should be before sending the next waypoint
 waypoint_time = -1 # If < 0, will send next waypoint when current one is reached. If >= 0, will send next waypoint after the amount of time has passed
+adaptive = True # Enable if should wait for adaptive controller
 
 # Flight modes class
 # Flight modes are activated using ROS services
@@ -69,6 +70,21 @@ class FlightModes:
             flightModeService(custom_mode='AUTO.LAND')
         except rospy.ServiceException, e:
             print "service set_mode call failed: %s. Land Mode could not be set."%e
+
+# Flight parameters class
+# Flight parameters are activated using ROS services
+class FlightParams:
+    def __init__(self):
+        pass
+
+    def getAdaptiveEnabled(self):
+        try:
+            paramGetService = rospy.ServiceProxy('mavros/param/get', mavros_msgs.srv.ParamGet)
+            parameter_recv = paramGetService("MPC_X_ADAPTIVE")
+            got = parameter_recv.success
+            return parameter_recv.value.integer
+        except rospy.ServiceException, e:
+            print "service param_get call failed: %s. Could not retrieve parameter."%e
 
 # Offboard controller for sending setpoints
 class Controller:
@@ -136,6 +152,9 @@ def run(argv):
     # controller object
     cnt = Controller()
 
+    # obtain flight parameters
+    params = FlightParams()
+
     # ROS loop rate
     rate = rospy.Rate(20.0)
 
@@ -171,6 +190,19 @@ def run(argv):
         modes.setOffboardMode()
         rate.sleep()
     print("OFFBOARD mode activated\n")
+
+    # Save initial position
+    init_pos = Point(cnt.local_pos.x, cnt.local_pos.y, cnt.local_pos.z)
+    if not relative:
+        init_pos = Point(0, 0, 0)
+
+    if adaptive:
+        print("Enable ADAPTIVE controller")
+        while not (params.getAdaptiveEnabled() or rospy.is_shutdown()):
+            cnt.updateSp(init_pos.y, init_pos.x, -init_pos.z, 0)
+            publish_setpoint(cnt, sp_pos_pub)
+            rate.sleep()
+        print("ADAPTIVE controller enabled\n")
 
     # ROS main loop - first set value to zero before stepping
     current_wp = 0
