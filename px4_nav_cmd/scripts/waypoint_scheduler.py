@@ -16,16 +16,11 @@ import time, sys, math
 
 # Global variables
 # Waypoints = [N, E, D, Yaw (deg)]
+step_size = 3
 waypoints = [
+                [step_size, 0, 0, 0],
                 [0, 0, 0, 0],
-                [1, 0, 0, 0],
-                [-1, 0, 0, 0],
-                [1, 0, 0, 0],
-                [-1, 0, 0, 0],
-                [1, 0, 0, 0],
-                [-1, 0, 0, 0],
-                [1, 0, 0, 0],
-                [-1, 0, 0, 0],
+                [step_size, 0, 0, 0],
                 [0, 0, 0, 0]
             ]
 # Should the waypoints be relative from the initial position (except yaw)?
@@ -34,12 +29,12 @@ relative = True
 threshold = 0.2
  # If waypoint_time < 0, will send next waypoint when current one is reached.
  # If waypoint_time >= 0, will send next waypoint after the amount of time has passed.
-waypoint_time = 20
+waypoint_time = 10
  # If autonomous is True, this node will automatically arm, switch to OFFBOARD mode, fly and land.
  # If it is False, it waits for the pilot to switch to OFFBOARD mode to fly and does not land.
-autonomous = False
+autonomous = True
 # If adaptive is True, it waits for the pilot to switch on the adaptive controller.
-adaptive = True
+adaptive = False
 
 # Flight modes class
 # Flight modes are activated using ROS services
